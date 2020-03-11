@@ -1,4 +1,5 @@
-cmake_minimum_required(VERSION 2.4.6)
+cmake_minimum_required(VERSION 2.8.3)
+project(qbo_arduqbo)
 include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 
 # Set the build type.  Options are:
@@ -15,6 +16,18 @@ rosbuild_init()
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 #set the default path for built libraries to the "lib" directory
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
+
+find_package(catkin REQUIRED COMPONENTS
+ roscpp
+ rospy
+ std_msgs
+ tf
+ message_generation
+)
+
+
+include_directories(${catkin_INCLUDE_DIRS})
+
 
 #uncomment if you have defined messages
 rosbuild_genmsg()
