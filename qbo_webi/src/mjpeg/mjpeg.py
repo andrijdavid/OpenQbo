@@ -27,7 +27,6 @@ import cherrypy
 import time
 import sys
 import rospy
-import cv
 from std_msgs.msg import String
 from sensor_msgs.msg import Image as RosImage
 from cv_bridge import CvBridge, CvBridgeError
@@ -35,6 +34,8 @@ import cStringIO
 import cv
 import threading
 import json
+import cv2
+import numpy as np
 
 class image_converter:
 
@@ -50,7 +51,7 @@ class image_converter:
   def callback(self,data):
     with self.img_lock:
       try:
-        self.cv_image = self.bridge.imgmsg_to_cv(data, "bgr8")
+        self.cv_image = self.bridge.imgmsg_to_cv2(data, "bgr8")
       except CvBridgeError, e:
         print e
 
@@ -60,14 +61,18 @@ class image_converter:
       while not self.cv_image and i<10:
         i+=1
         time.sleep(0.1)
-    image=cv.CreateMat(self.h, self.w, cv.CV_8UC3)
-    cv.SetZero(image)
-    if not self.cv_image:
+    #image=cv2.CreateMat(self.h, self.w, cv.CV_8UC3)
+    image = np.zeros((self.h, self.w, 3), np.uint8)
+    #cv.SetZero(image)
+    while self.cv_image==None:
       pass
     else:
       with self.img_lock:
-        cv.Resize(self.cv_image,image)
-    return cv.EncodeImage(".jpeg", image, [cv.CV_IMWRITE_JPEG_QUALITY, self.quality]).tostring()
+        r = 200.0 / image.shape[1]
+        dim = (200, int(image.shape[0] * r))
+        resized = cv2.resize(self.cv_image, dim, interpolation = cv2.INTER_AREA)
+        #mat_array = cv.fromarray(image)
+    return cv.EncodeImage(".jpeg", cv.fromarray(resized), [cv.CV_IMWRITE_JPEG_QUALITY, self.quality]).tostring()
 
   def stop(self):
     self.image_sub.unregister()
@@ -163,4 +168,3 @@ class MjpegGrabber():
             yield "\n\r--"+self.boundary+"\r\n"+intermediateheader+imgData+"\r\n"+self.boundary+"\n\r"
         print 'End of content'
         #yield "\n\r--"+self.boundary+"\r\n"+intermediateheader+imgData+"\r\n"+self.boundary+"\n\r"
-
